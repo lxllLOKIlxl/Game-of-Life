@@ -19,7 +19,7 @@ def count_neighbors(grid, x, y):
     ]
     return sum(grid[(x+i)%GRID_SIZE, (y+j)%GRID_SIZE] for i, j in neighbors)
 
-# Оновлення поколінь (правильний баланс народження і смерті)
+# Оновлення поколінь
 def update_grid(grid):
     new_grid = np.zeros((GRID_SIZE, GRID_SIZE), dtype=int)
     for x in range(GRID_SIZE):
@@ -31,10 +31,10 @@ def update_grid(grid):
                 new_grid[x, y] = 1
     return new_grid
 
-# Генерація узорів (починається мінімум із 3 клітин)
+# Генерація правильних узорів
 def generate_random_pattern():
     grid = np.zeros((GRID_SIZE, GRID_SIZE), dtype=int)
-    num_patterns = np.random.randint(3, 6)  # Обмежена кількість стартових точок
+    num_patterns = np.random.randint(3, 6)
     for _ in range(num_patterns):
         x, y = np.random.randint(1, GRID_SIZE-2, size=2)
         grid[x, y] = 1
@@ -52,29 +52,29 @@ col = st.slider("Стовпець", 0, GRID_SIZE-1)
 if st.button("Додати клітину"):
     st.session_state.grid[row, col] = 1
 
-# Кнопки керування
-col1, col2, col3 = st.columns(3)
+# Кнопки керування (тепер "Старт" і "Стоп" окремо)
+col1, col2, col3, col4 = st.columns(4)
 with col1:
-    start_stop = st.button("Старт / Зупинити")
-    if start_stop:
-        st.session_state.running = not st.session_state.running
+    if st.button("Старт"):
+        st.session_state.running = True
 with col2:
+    if st.button("Стоп"):
+        st.session_state.running = False
+with col3:
     if st.button("Очистити"):
         st.session_state.grid = np.zeros((GRID_SIZE, GRID_SIZE), dtype=int)
-with col3:
+with col4:
     if st.button("Рандомний узор"):
         st.session_state.grid = generate_random_pattern()
 
-# **Автоматичне оновлення поколінь без помилки**
+# Автоматичне оновлення поколінь без повторного кліку
 if st.session_state.running:
     st.session_state.grid = update_grid(st.session_state.grid)
-    st.session_state.running = True  # Фіксуємо помилку оновлення
+    st.experimental_rerun()
 
-# Візуалізація (тепер поле має **неонову рамку**)
+# Візуалізація з неоновою рамкою
 fig, ax = plt.subplots(figsize=(6, 6))
-
-# Малюємо саму рамку
-ax.set_facecolor("black")  # Фон чорний для контрасту
+ax.set_facecolor("black")  
 ax.spines["top"].set_color("#ff007f")
 ax.spines["right"].set_color("#ff007f")
 ax.spines["bottom"].set_color("#ff007f")
@@ -84,8 +84,6 @@ ax.spines["right"].set_linewidth(5)
 ax.spines["bottom"].set_linewidth(5)
 ax.spines["left"].set_linewidth(5)
 
-# Малюємо саму гру
 ax.imshow(st.session_state.grid, cmap="gray_r", interpolation="nearest")
 ax.axis("off")
 st.pyplot(fig)
-
