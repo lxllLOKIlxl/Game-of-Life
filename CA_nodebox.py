@@ -1,63 +1,57 @@
 import streamlit as st
 import numpy as np
+import random
 import matplotlib.pyplot as plt
 
-GRID_SIZE = 30  # Зменшене поле
-UPDATE_INTERVAL = 0.5  # Оновлення кожні 0.5 секунди
+GRID_SIZE = 50
+CELL_SIZE = 10
 
-# Початкове значення гри (порожнє поле)
+# Ініціалізація гри
 if "grid" not in st.session_state:
     st.session_state.grid = np.zeros((GRID_SIZE, GRID_SIZE), dtype=int)
 if "running" not in st.session_state:
     st.session_state.running = False
 
-# Функція для отримання сусідів
-def count_neighbors(grid, x, y):
-    neighbors = [
-        (-1, -1), (-1, 0), (-1, 1),
-        (0, -1),          (0, 1),
-        (1, -1), (1, 0), (1, 1)
-    ]
-    return sum(grid[(x+i)%GRID_SIZE, (y+j)%GRID_SIZE] for i, j in neighbors)
+# Функція для перевірки сусідів
+def neighbours(x, y, grid):
+    O = [(x+1, y), (x-1, y), (x, y+1), (x, y-1), (x+1, y+1), (x-1, y-1), (x-1, y+1), (x+1, y-1)]
+    N = sum(grid[i % GRID_SIZE, j % GRID_SIZE] for i, j in O if i >= 0 and j >= 0)
+    return N
 
-# Функція для генерації нового покоління
-def update_grid():
-    new_grid = np.zeros((GRID_SIZE, GRID_SIZE), dtype=int)
-    grid = st.session_state.grid.copy()  
+# Функція для перевірки існування клітини
+def exist(x, y, grid):
+    return grid[x, y] == 1
 
+# Клас для обробки клітин
+def update_grid(grid):
+    new_grid = grid.copy()
+    
     for x in range(GRID_SIZE):
         for y in range(GRID_SIZE):
-            neighbors = count_neighbors(grid, x, y)
-            if grid[x, y] == 1 and (neighbors == 2 or neighbors == 3):  
-                new_grid[x, y] = 1
-            elif grid[x, y] == 0 and neighbors == 3:  
-                new_grid[x, y] = 1
+            N = neighbours(x, y, grid)
+            if grid[x, y] == 1 and (N < 2 or N > 3):
+                new_grid[x, y] = 0  # Клітина вмирає
+            elif grid[x, y] == 0 and N == 3:
+                new_grid[x, y] = 1  # Клітина народжується
+            
+    return new_grid
 
-    st.session_state.grid = new_grid  
-
-# Функція для створення випадкових узорів (мінімум 3 клітини)
-def generate_random_pattern():
-    grid = np.zeros((GRID_SIZE, GRID_SIZE), dtype=int)
-    num_patterns = np.random.randint(3, 6)  
-    for _ in range(num_patterns):
-        x, y = np.random.randint(1, GRID_SIZE-2, size=2)
-        grid[x, y] = 1
-        grid[x+1, y] = 1
-        grid[x, y+1] = 1  
-    return grid
+# Функція для додавання нових клітин
+def add_cell(x, y):
+    if 0 <= x < GRID_SIZE and 0 <= y < GRID_SIZE:
+        st.session_state.grid[x, y] = 1
 
 # UI Streamlit
-st.title("Гра 'Життя'")
+st.title("Гра 'Життя' в Streamlit")
 
-# Малювання вручну
-st.write("**Намалюй живі клітини:**")
+# Вибір координат
 row = st.slider("Рядок", 0, GRID_SIZE-1)
 col = st.slider("Стовпець", 0, GRID_SIZE-1)
 if st.button("Додати клітину"):
-    st.session_state.grid[row, col] = 1
+    add_cell(row, col)
 
-# Кнопки керування (окремо "Старт" і "Стоп")
-col1, col2, col3, col4 = st.columns(4)
+# Кнопки керування
+col1, col2, col3 = st.columns(3)
 with col1:
     if st.button("Старт"):
         st.session_state.running = True
@@ -67,29 +61,17 @@ with col2:
 with col3:
     if st.button("Очистити"):
         st.session_state.grid = np.zeros((GRID_SIZE, GRID_SIZE), dtype=int)
-with col4:
-    if st.button("Рандомний узор"):
-        st.session_state.grid = generate_random_pattern()
 
-# **Автоматичне оновлення поколінь без помилки**
+# Автоматичне оновлення поколінь
 if st.session_state.running:
-    update_grid()
-    time.sleep(UPDATE_INTERVAL)
-    st.session_state.running = True  
+    st.session_state.grid = update_grid(st.session_state.grid)
 
-# Візуалізація (тепер поле має **неонову рамку**)
+# Візуалізація
 fig, ax = plt.subplots(figsize=(6, 6))
-
-ax.set_facecolor("black")  
-ax.spines["top"].set_color("#ff007f")
-ax.spines["right"].set_color("#ff007f")
-ax.spines["bottom"].set_color("#ff007f")
-ax.spines["left"].set_color("#ff007f")
-ax.spines["top"].set_linewidth(5)
-ax.spines["right"].set_linewidth(5)
-ax.spines["bottom"].set_linewidth(5)
-ax.spines["left"].set_linewidth(5)
-
-ax.imshow(st.session_state.grid, cmap="gray_r", interpolation="nearest")
+ax.set_xticks(range(0, GRID_SIZE, CELL_SIZE))
+ax.set_yticks(range(0, GRID_SIZE, CELL_SIZE))
+ax.grid(True, color="white", linewidth=0.5)
+ax.imshow(st.session_state.grid, cmap="inferno", interpolation="nearest")
+ax.set_title("Живі клітини")
 ax.axis("off")
 st.pyplot(fig)
