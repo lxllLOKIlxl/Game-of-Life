@@ -3,9 +3,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 GRID_SIZE = 50  # Розмір поля
-UPDATE_INTERVAL = 0.5  # Час оновлення гри
 
-# Початкове значення (чисте поле)
+# Початкове значення гри (порожнє поле)
 if "grid" not in st.session_state:
     st.session_state.grid = np.zeros((GRID_SIZE, GRID_SIZE), dtype=int)
 if "running" not in st.session_state:
@@ -20,7 +19,7 @@ def count_neighbors(grid, x, y):
     ]
     return sum(grid[(x+i)%GRID_SIZE, (y+j)%GRID_SIZE] for i, j in neighbors)
 
-# Функція для генерації нового покоління
+# Оновлення поколінь
 def update_grid(grid):
     new_grid = np.zeros((GRID_SIZE, GRID_SIZE), dtype=int)
     for x in range(GRID_SIZE):
@@ -32,19 +31,21 @@ def update_grid(grid):
                 new_grid[x, y] = 1
     return new_grid
 
-# Функція для створення **маленького випадкового узору**
+# Функція для створення маленьких узорів (починається з 3 клітин)
 def generate_random_pattern():
     grid = np.zeros((GRID_SIZE, GRID_SIZE), dtype=int)
-    num_cells = np.random.randint(5, 15)  # Кількість живих клітин (5–15)
-    for _ in range(num_cells):
-        x, y = np.random.randint(0, GRID_SIZE, size=2)
+    num_patterns = np.random.randint(3, 7)  # Кількість стартових узорів
+    for _ in range(num_patterns):
+        x, y = np.random.randint(0, GRID_SIZE-2, size=2)
         grid[x, y] = 1
+        grid[x+1, y] = 1
+        grid[x, y+1] = 1  # Створюємо форму, що не вмирає одразу
     return grid
 
 # UI Streamlit
 st.title("Гра 'Життя'")
 
-# Малювання клітин
+# Малювання клітин вручну
 st.write("**Намалюй живі клітини вручну:**")
 row = st.slider("Рядок", 0, GRID_SIZE-1)
 col = st.slider("Стовпець", 0, GRID_SIZE-1)
@@ -67,9 +68,10 @@ with col3:
 if st.session_state.running:
     st.session_state.grid = update_grid(st.session_state.grid)
 
-# Візуалізація (тепер чорні живі клітини видно правильно)
+# Візуалізація (тепер узори стартують правильно)
 fig, ax = plt.subplots(figsize=(5, 5))
 ax.imshow(st.session_state.grid, cmap="gray_r", interpolation="nearest")
 ax.axis("off")
 st.pyplot(fig)
+
 
