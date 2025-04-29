@@ -2,7 +2,7 @@ import streamlit as st
 import numpy as np
 import matplotlib.pyplot as plt
 
-GRID_SIZE = 50  # Розмір поля
+GRID_SIZE = 30  # Зменшене поле
 
 # Початкове значення гри (порожнє поле)
 if "grid" not in st.session_state:
@@ -19,34 +19,34 @@ def count_neighbors(grid, x, y):
     ]
     return sum(grid[(x+i)%GRID_SIZE, (y+j)%GRID_SIZE] for i, j in neighbors)
 
-# Оновлення поколінь (баланс виживання)
+# Оновлення поколінь (правильний баланс народження і смерті)
 def update_grid(grid):
     new_grid = np.zeros((GRID_SIZE, GRID_SIZE), dtype=int)
     for x in range(GRID_SIZE):
         for y in range(GRID_SIZE):
             neighbors = count_neighbors(grid, x, y)
-            if grid[x, y] == 1 and (neighbors in [2, 3]):  # Виживання
+            if grid[x, y] == 1 and neighbors in [2, 3]:  # Виживання
                 new_grid[x, y] = 1
             elif grid[x, y] == 0 and neighbors == 3:  # Народження
                 new_grid[x, y] = 1
     return new_grid
 
-# Функція для генерації випадкових стартових узорів (мінімум 3 клітини)
+# Генерація узорів (починається мінімум із 3 клітин)
 def generate_random_pattern():
     grid = np.zeros((GRID_SIZE, GRID_SIZE), dtype=int)
-    num_patterns = np.random.randint(3, 7)  # Кількість стартових точок
+    num_patterns = np.random.randint(3, 6)  # Обмежена кількість стартових точок
     for _ in range(num_patterns):
         x, y = np.random.randint(1, GRID_SIZE-2, size=2)
         grid[x, y] = 1
         grid[x+1, y] = 1
-        grid[x, y+1] = 1  # Мінімальний живучий узор
+        grid[x, y+1] = 1
     return grid
 
 # UI Streamlit
 st.title("Гра 'Життя'")
 
 # Малювання вручну
-st.write("**Намалюй живі клітини вручну:**")
+st.write("**Намалюй живі клітини:**")
 row = st.slider("Рядок", 0, GRID_SIZE-1)
 col = st.slider("Стовпець", 0, GRID_SIZE-1)
 if st.button("Додати клітину"):
@@ -55,7 +55,8 @@ if st.button("Додати клітину"):
 # Кнопки керування
 col1, col2, col3 = st.columns(3)
 with col1:
-    if st.button("Старт / Зупинити"):
+    start_stop = st.button("Старт / Зупинити")
+    if start_stop:
         st.session_state.running = not st.session_state.running
 with col2:
     if st.button("Очистити"):
@@ -64,12 +65,13 @@ with col3:
     if st.button("Рандомний узор"):
         st.session_state.grid = generate_random_pattern()
 
-# Автоматичне оновлення поколінь (без оновлення сторінки)
+# **Автоматичне оновлення поколінь без повторного кліку**
 if st.session_state.running:
     st.session_state.grid = update_grid(st.session_state.grid)
+    st.experimental_rerun()  # Автоматичне оновлення без затримки
 
-# Візуалізація (тепер узори розвиваються гармонійно)
-fig, ax = plt.subplots(figsize=(5, 5))
-ax.imshow(st.session_state.grid, cmap="gray_r", interpolation="nearest")
+# Візуалізація (тепер поле має неонову підсвітку)
+fig, ax = plt.subplots(figsize=(6, 6))
+ax.imshow(st.session_state.grid, cmap="inferno", interpolation="nearest")
 ax.axis("off")
 st.pyplot(fig)
