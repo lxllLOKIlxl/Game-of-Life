@@ -3,9 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 GRID_SIZE = 50  # Розмір поля
-UPDATE_INTERVAL = 0.5  # Оновлення кожні 0.5 секунди
+UPDATE_INTERVAL = 0.5  # Час оновлення гри
 
-# Початкове значення гри (чисте поле)
+# Початкове значення (чисте поле)
 if "grid" not in st.session_state:
     st.session_state.grid = np.zeros((GRID_SIZE, GRID_SIZE), dtype=int)
 if "running" not in st.session_state:
@@ -20,7 +20,7 @@ def count_neighbors(grid, x, y):
     ]
     return sum(grid[(x+i)%GRID_SIZE, (y+j)%GRID_SIZE] for i, j in neighbors)
 
-# Функція для оновлення поколінь
+# Функція для генерації нового покоління
 def update_grid(grid):
     new_grid = np.zeros((GRID_SIZE, GRID_SIZE), dtype=int)
     for x in range(GRID_SIZE):
@@ -32,11 +32,20 @@ def update_grid(grid):
                 new_grid[x, y] = 1
     return new_grid
 
+# Функція для створення **маленького випадкового узору**
+def generate_random_pattern():
+    grid = np.zeros((GRID_SIZE, GRID_SIZE), dtype=int)
+    num_cells = np.random.randint(5, 15)  # Кількість живих клітин (5–15)
+    for _ in range(num_cells):
+        x, y = np.random.randint(0, GRID_SIZE, size=2)
+        grid[x, y] = 1
+    return grid
+
 # UI Streamlit
 st.title("Гра 'Життя'")
 
 # Малювання клітин
-st.write("**Намалюй живі клітини**:")
+st.write("**Намалюй живі клітини вручну:**")
 row = st.slider("Рядок", 0, GRID_SIZE-1)
 col = st.slider("Стовпець", 0, GRID_SIZE-1)
 if st.button("Додати клітину"):
@@ -51,15 +60,16 @@ with col2:
     if st.button("Очистити"):
         st.session_state.grid = np.zeros((GRID_SIZE, GRID_SIZE), dtype=int)
 with col3:
-    if st.button("Рандомне поле"):
-        st.session_state.grid = np.random.randint(0, 2, size=(GRID_SIZE, GRID_SIZE))
+    if st.button("Рандомний узор"):
+        st.session_state.grid = generate_random_pattern()
 
-# Генерація у реальному часі без оновлення сторінки
+# Генерація у реальному часі
 if st.session_state.running:
     st.session_state.grid = update_grid(st.session_state.grid)
 
-# Візуалізація (тепер поле чисте, а живі клітини чорні)
+# Візуалізація (тепер чорні живі клітини видно правильно)
 fig, ax = plt.subplots(figsize=(5, 5))
 ax.imshow(st.session_state.grid, cmap="gray_r", interpolation="nearest")
 ax.axis("off")
 st.pyplot(fig)
+
