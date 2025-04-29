@@ -22,16 +22,19 @@ def count_neighbors(grid, x, y):
     return sum(grid[(x+i)%GRID_SIZE, (y+j)%GRID_SIZE] for i, j in neighbors)
 
 # Функція для генерації нового покоління
-def update_grid(grid):
+def update_grid():
     new_grid = np.zeros((GRID_SIZE, GRID_SIZE), dtype=int)
+    grid = st.session_state.grid.copy()  # Беремо поточний стан
+
     for x in range(GRID_SIZE):
         for y in range(GRID_SIZE):
             neighbors = count_neighbors(grid, x, y)
-            if grid[x, y] == 1 and (neighbors == 2 or neighbors == 3):
+            if grid[x, y] == 1 and (neighbors == 2 or neighbors == 3):  # Виживання
                 new_grid[x, y] = 1
-            elif grid[x, y] == 0 and neighbors == 3:
+            elif grid[x, y] == 0 and neighbors == 3:  # Народження
                 new_grid[x, y] = 1
-    return new_grid
+
+    st.session_state.grid = new_grid  # Оновлюємо глобальний стан
 
 # Функція для створення випадкових узорів (мінімум 3 клітини)
 def generate_random_pattern():
@@ -70,10 +73,10 @@ with col4:
         st.session_state.grid = generate_random_pattern()
 
 # **Автоматичне оновлення поколінь**
-while st.session_state.running:
-    st.session_state.grid = update_grid(st.session_state.grid)
+if st.session_state.running:
     time.sleep(UPDATE_INTERVAL)
-    st.experimental_rerun()  # Оновлення гри без потреби натискати "Старт"
+    update_grid()
+    st.experimental_set_query_params(auto_update="true")  # Коректний механізм оновлення
 
 # Візуалізація (тепер поле має **неонову рамку**)
 fig, ax = plt.subplots(figsize=(6, 6))
