@@ -3,10 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import time
 
-# Розмір гри
 GRID_SIZE = 50
 
-# Початкове значення гри
+# Початкове значення гри (порожнє поле)
 if "grid" not in st.session_state:
     st.session_state.grid = np.zeros((GRID_SIZE, GRID_SIZE), dtype=int)
 if "running" not in st.session_state:
@@ -21,7 +20,7 @@ def count_neighbors(grid, x, y):
     ]
     return sum(grid[(x+i)%GRID_SIZE, (y+j)%GRID_SIZE] for i, j in neighbors)
 
-# Оновлення гри
+# Оновлення гри (генерація нового покоління)
 def update_grid(grid):
     new_grid = np.zeros((GRID_SIZE, GRID_SIZE), dtype=int)
     for x in range(GRID_SIZE):
@@ -33,31 +32,30 @@ def update_grid(grid):
                 new_grid[x, y] = 1
     return new_grid
 
-# UI
+# UI Streamlit
 st.title("Гра 'Життя'")
 
-# Малювання клітини
+# Малювання клітини (додає чорний квадрат)
 row = st.slider("Рядок", 0, GRID_SIZE-1)
 col = st.slider("Стовпець", 0, GRID_SIZE-1)
 if st.button("Додати клітину"):
     st.session_state.grid[row, col] = 1
 
-# Кнопки керування
-if st.button("Старт"):
-    st.session_state.running = True
-if st.button("Зупинити"):
-    st.session_state.running = False
+# Кнопки управління
+start_stop = st.button("Старт / Зупинити")
+if start_stop:
+    st.session_state.running = not st.session_state.running
 if st.button("Очистити"):
     st.session_state.grid = np.zeros((GRID_SIZE, GRID_SIZE), dtype=int)
 
 # Гра у реальному часі
-if st.session_state.running:
+while st.session_state.running:
     st.session_state.grid = update_grid(st.session_state.grid)
-    time.sleep(1)
+    time.sleep(0.5)
     st.rerun()
 
-# Візуалізація
+# Візуалізація (тепер поле чисте, клітини чорні)
 fig, ax = plt.subplots()
-ax.imshow(st.session_state.grid, cmap="gray")
+ax.imshow(st.session_state.grid, cmap="gray_r")
 ax.axis("off")
 st.pyplot(fig)
