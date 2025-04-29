@@ -65,13 +65,27 @@ with col3:
     if st.button("Рандомний узор"):
         st.session_state.grid = generate_random_pattern()
 
-# **Автоматичне оновлення поколінь без повторного кліку**
+# **Автоматичне оновлення поколінь без помилки**
 if st.session_state.running:
     st.session_state.grid = update_grid(st.session_state.grid)
-    st.experimental_rerun()  # Автоматичне оновлення без затримки
+    st.session_state.running = True  # Фіксуємо помилку оновлення
 
-# Візуалізація (тепер поле має неонову підсвітку)
+# Візуалізація (тепер поле має **неонову рамку**)
 fig, ax = plt.subplots(figsize=(6, 6))
-ax.imshow(st.session_state.grid, cmap="inferno", interpolation="nearest")
+
+# Малюємо саму рамку
+ax.set_facecolor("black")  # Фон чорний для контрасту
+ax.spines["top"].set_color("#ff007f")
+ax.spines["right"].set_color("#ff007f")
+ax.spines["bottom"].set_color("#ff007f")
+ax.spines["left"].set_color("#ff007f")
+ax.spines["top"].set_linewidth(5)
+ax.spines["right"].set_linewidth(5)
+ax.spines["bottom"].set_linewidth(5)
+ax.spines["left"].set_linewidth(5)
+
+# Малюємо саму гру
+ax.imshow(st.session_state.grid, cmap="gray_r", interpolation="nearest")
 ax.axis("off")
 st.pyplot(fig)
+
